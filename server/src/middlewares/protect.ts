@@ -1,20 +1,16 @@
 import { NextFunction, Request, Response } from "express";
 import { promisify } from "util";
-
 const jwt = require("jsonwebtoken");
 
-import { jsonWebToken } from "../env";
 import { User } from "../models/users.model";
+
+import { jsonWebToken } from "../env";
+import { handleAsync, sendResponse } from "../utils";
 
 const { secretKey } = jsonWebToken;
 
-export const protect = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    console.log("protect");
+export const protect = handleAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
     //get token from header
     let token = "";
     if (
@@ -24,10 +20,7 @@ export const protect = async (
       token = req.headers.authorization.split(" ")[1];
     }
     if (!token) {
-      return res.json({
-        status: 401,
-        message: "Provide token to authenticate",
-      });
+      return sendResponse(res, 401, "Provide token to authenticate");
     }
 
     //if token exists, verify this token
@@ -37,14 +30,9 @@ export const protect = async (
     const user = await User.findById(id);
     //if not user, return error
     if (!user) {
-      return res.json({
-        status: 401,
-        message: "No users exist with this token",
-      });
+      return sendResponse(res, 401, "No users exist with this token");
     }
     req.user = user;
     next();
-  } catch (err) {
-    console.log("protect Error: >>> \b", err);
   }
-};
+);
